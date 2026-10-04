@@ -3305,7 +3305,7 @@ body{
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="줄넘기">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <script id="a2hs-script">
 /* [홈 화면 추가] 폰 브라우저에서 이 페이지를 바탕화면(홈 화면) 아이콘으로 추가하도록 안내하는 기능.
@@ -3483,9 +3483,14 @@ body{
 #jd-splash img{width:min(44vw,210px);height:auto;border-radius:22%;box-shadow:0 10px 30px rgba(0,0,0,.18);animation:jdPop .6s cubic-bezier(.2,1.2,.4,1) both}
 #jd-splash.out{opacity:0;visibility:hidden}
 @keyframes jdPop{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
-#jd-install{position:fixed;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:2147482999;display:flex;align-items:center;gap:8px;background:#111216;color:#fff;border-radius:999px;padding:6px 6px 6px 14px;font:700 13px 'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.3)}
-#jd-install button{border:0;border-radius:999px;padding:8px 12px;font:700 13px 'Noto Sans KR',sans-serif;cursor:pointer}
+#jd-install{position:fixed;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:2147482999;display:flex;align-items:center;gap:6px;background:#111216;color:#fff;border-radius:999px;padding:5px 5px 5px 12px;font:700 12px 'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#jd-install button{border:0;border-radius:999px;padding:7px 11px;font:700 12px 'Noto Sans KR',sans-serif;cursor:pointer}
 #jd-install .go{background:#d7262b;color:#fff}#jd-install .x{background:#2c2e36;color:#fff}
+#jd-help{position:fixed;inset:0;z-index:2147483645;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}
+#jd-help .bx{background:#fff;color:#111216;width:min(520px,100%);max-height:90vh;overflow:auto;border-radius:16px 16px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom,0px));font:15px/1.6 'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif}
+#jd-help b.t{display:block;font-size:19px;margin-bottom:6px}
+#jd-help .c{background:#f2f3f6;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:14px}
+#jd-help button{margin-top:14px;width:100%;border:0;border-radius:10px;background:#d7262b;color:#fff;font:700 15px 'Noto Sans KR',sans-serif;padding:13px;cursor:pointer}
 @media (prefers-reduced-motion: reduce){#jd-splash img{animation:none}#jd-splash{transition:none}}
 </style>
 <script>
@@ -3494,12 +3499,36 @@ body{
   function hide(){ var s=document.getElementById("jd-splash"); if(!s||s.classList.contains("out")) return; s.classList.add("out"); setTimeout(function(){ if(s.parentNode) s.parentNode.removeChild(s); },700); }
   window.addEventListener("load",function(){ setTimeout(hide,Math.max(0,750-(Date.now()-t0))); });
   setTimeout(hide,4000);
+  var KEY="jd-install-off2-jumprope", NAME="줄넘기", dp=null;
+  var standalone=(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;
+  var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  window.addEventListener("beforeinstallprompt",function(e){ e.preventDefault(); dp=e; pill(); });
+  function help(){
+    var w=document.createElement("div"); w.id="jd-help";
+    w.innerHTML="<div class='bx'><b class='t'>"+NAME+" 앱으로 설치하기</b>설치하면 주소창 없이 앱처럼 열려요."+
+      "<div class='c'><b>갤럭시 · 크롬</b><br>오른쪽 위 ⋮ → <b>홈 화면에 추가</b> → <b>설치</b></div>"+
+      "<div class='c'><b>삼성 인터넷</b><br>아래 ≡ → <b>현재 페이지 추가</b> → <b>홈 화면</b></div>"+
+      "<div class='c'><b>아이폰 사파리</b><br>아래 공유 버튼 → <b>홈 화면에 추가</b></div>"+
+      "<div class='c'><b>\"이미 설치되어 있습니다\"가 나오면</b><br>휴대폰 <b>설정 → 애플리케이션</b>에서 <b>"+NAME+"</b>을(를) 찾아 삭제한 뒤 다시 설치해 주세요. 아이콘을 꾹 눌러 \"홈 화면에서 삭제\"만 하면 앱은 남아 있어요.</div>"+
+      "<button type='button'>확인</button></div>";
+    w.addEventListener("click",function(e){ if(e.target===w||e.target.tagName==="BUTTON") w.remove(); });
+    document.body.appendChild(w);
+  }
+  function pill(){
+    if(standalone||document.getElementById("jd-install")) return; try{ if(localStorage.getItem(KEY)) return; }catch(_){}
+    var b=document.createElement("div"); b.id="jd-install"; b.innerHTML="<span>앱으로 설치</span><button class='go' type='button'>설치</button><button class='x' type='button' aria-label='닫기'>✕</button>";
+    b.querySelector(".go").onclick=function(){ if(dp){ var d=dp; dp=null; d.prompt(); d.userChoice.then(function(r){ if(r&&r.outcome==="accepted") b.remove(); }); } else help(); };
+    b.querySelector(".x").onclick=function(){ b.remove(); try{ localStorage.setItem(KEY,"1"); }catch(_){} };
+    document.body.appendChild(b);
+  }
+  if(isIOS) window.addEventListener("load",function(){ setTimeout(pill,1200); });
+  window.addEventListener("appinstalled",function(){ var b=document.getElementById("jd-install"); if(b) b.remove(); });
+  window.jdInstallHelp=help;
 
 })();
-</script>
-</head>
+</script></head>
 <body>
-<div id="jd-splash" aria-hidden="true"><img src="icons/icon-512.png" alt=""></div>
+<div id="jd-splash" aria-hidden="true"><img src="icon-512.png" alt=""></div>
 <div class="wrap">
 
   <div id="load-overlay">
