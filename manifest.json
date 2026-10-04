@@ -1,10 +1,11 @@
 {
   "name": "정도 줄넘기 시합",
   "short_name": "줄넘기",
-  "id": "./",
+  "id": "./?app=jumprope",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#06060a",
   "theme_color": "#06060a",
   "lang": "ko",

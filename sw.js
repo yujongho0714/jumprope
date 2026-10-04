@@ -1,14 +1,17 @@
-/* 정도 줄넘기 시합 서비스워커 - 한 번 받은 파일을 폰에 저장해두고 다음부터는 데이터 없이 엽니다.
-   화면 파일(index.html)은 열 때마다 "바뀌었는지"만 조용히 확인하고, 바뀌었으면 다음번 실행부터 새 버전이 보입니다. */
-const CACHE = 'jump-v2';
+/* 정도 줄넘기 시합 서비스워커
+   - 한 번 받은 화면 파일을 폰에 저장해 두고 다음부터 바로 열어요.
+   - 열 때마다 새 버전이 있는지 조용히 확인하고, 바뀌었으면 다음 실행부터 새 화면이 보여요.
+   - Firebase(클라우드 저장)와 구글 로그인은 항상 인터넷으로 연결해요. */
+const CACHE = 'jd-jumprope-v3';
 const SHELL = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png'];
+const NETWORK_ONLY = /firebaseio\.com|firebasedatabase\.app|firebaseapp\.com|googleapis\.com|accounts\.google\.com|apis\.google\.com|securetoken|identitytoolkit|youtube\.com|youtube-nocookie\.com/;
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => null)))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('jump-') && k !== CACHE).map(k => caches.delete(k))))
+    caches.keys().then(ks => Promise.all(ks.filter(k => (k.startsWith('jd-jumprope-')||k.startsWith('jump-')) && k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -17,7 +20,7 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
-  if (/firebaseio\.com|firebasedatabase\.app/.test(url.hostname)) return; // 실시간 대전은 항상 인터넷으로
+  if (NETWORK_ONLY.test(url.hostname) || url.pathname.indexOf('/__/auth/') >= 0) return;
   e.respondWith(url.origin === location.origin ? sameSite(e, req) : cdn(req));
 });
 
@@ -25,10 +28,10 @@ async function sameSite(e, req) {
   const cache = await caches.open(CACHE);
   const hit = await cache.match(req, { ignoreSearch: true });
   const net = fetch(req.url, { cache: 'no-cache' }).then(async r => {
-    if (r && r.ok) {
+    if (r && r.ok && r.type === 'basic') {
       const old = hit && hit.headers.get('etag');
       const cur = r.headers.get('etag');
-      if (!hit || !old || !cur || old !== cur) await cache.put(req.url, r.clone());
+      if (!hit || !old || !cur || old !== cur) await cache.put(req.url.split('?')[0], r.clone());
     }
     return r;
   }).catch(() => null);
