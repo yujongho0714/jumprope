@@ -12470,7 +12470,7 @@ body{
 </script>
 <!-- ===== 🎵 줄넘기 배경음악 (유튜브 뮤직 재생목록 랜덤 재생) ===== -->
 <style>
-#jrmBtn{position:fixed;left:10px;bottom:10px;z-index:99990;width:46px;height:46px;border-radius:50%;border:0;background:#1f1f1f;color:#fff;font-size:22px;box-shadow:0 3px 10px rgba(0,0,0,.35);cursor:pointer;opacity:.85}
+#jrmBtn{position:fixed;left:10px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:99990;width:46px;height:46px;border-radius:50%;border:0;background:#1f1f1f;color:#fff;font-size:22px;box-shadow:0 3px 10px rgba(0,0,0,.35);cursor:pointer;opacity:.85}
 #jrmBtn.on{background:#e53935}
 #jrmBox{position:fixed;left:10px;bottom:62px;z-index:99991;width:min(92vw,360px);background:#fff;color:#222;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.4);padding:14px;display:none;font:14px/1.45 system-ui,sans-serif}
 #jrmBox.show{display:block}
@@ -12481,8 +12481,8 @@ body{
 #jrmBox button.p{background:#e53935;color:#fff}
 #jrmBox .note{font-size:12px;color:#666;margin-top:8px}
 #jrmMsg{font-size:13px;color:#1565c0;margin-top:6px;min-height:1em}
-#jrmPlayer{position:fixed;right:10px;bottom:10px;z-index:99989;width:200px;height:113px;border-radius:10px;overflow:hidden;box-shadow:0 3px 12px rgba(0,0,0,.4);background:#000;transform:translateX(calc(100% + 30px));transition:transform .3s}
-#jrmPlayer.show{transform:none}
+#jrmPlayer{position:fixed;right:0;bottom:0;z-index:1;width:2px;height:2px;overflow:hidden;opacity:.01;pointer-events:none}
+#jrmPlayer.need{right:10px;bottom:70px;z-index:99989;width:200px;height:113px;opacity:1;pointer-events:auto;border-radius:10px;box-shadow:0 3px 12px rgba(0,0,0,.4);background:#000}
 #jrmPlayer iframe,#jrmPlayer>div{width:100%;height:100%}
 </style>
 <button id="jrmBtn" title="배경음악 설정">🎵</button>
@@ -12510,7 +12510,7 @@ body{
     if(/^VL/.test(id)) id=id.slice(2);
     return id;
   }
-  var player=null, ready=false, apiLoading=false, playing=false, wantPlay=false, lastIdx=-1, cuedList='', errCount=0;
+  var blkT=null, player=null, ready=false, apiLoading=false, playing=false, wantPlay=false, lastIdx=-1, cuedList='', errCount=0;
   function msg(t){ var m=$('jrmMsg'); if(m) m.textContent=t||''; }
   function loadApi(){
     if(window.YT&&window.YT.Player){ makePlayer(); return; }
@@ -12527,7 +12527,7 @@ body{
       playerVars:{listType:'playlist',list:cfg.list,playsinline:1,controls:1,rel:0,modestbranding:1},
       events:{
         onReady:function(){ ready=true; cuedList=cfg.list; try{player.setLoop(true);}catch(e){} if(wantPlay) playRandom(); },
-        onStateChange:function(e){ if(e.data===1){ errCount=0; if(!wantPlay){ try{player.pauseVideo();}catch(_){} } } },
+        onStateChange:function(e){ if(e.data===1){ errCount=0; $('jrmPlayer').classList.remove('need'); if(!wantPlay){ try{player.pauseVideo();}catch(_){} } } },
         onError:function(e){ errCount++; if(wantPlay&&errCount<6) setTimeout(playRandom,400); else if(errCount>=6) msg('재생할 수 있는 곡이 없어요. 재생목록이 공개/일부공개인지 확인해주세요.'); }
       }});
   }
@@ -12540,7 +12540,7 @@ body{
     if(list.length>1){ while(i===lastIdx) i=Math.floor(Math.random()*list.length); }
     lastIdx=i;
     try{ player.setShuffle(true); player.setLoop(true); player.unMute(); player.setVolume(100); player.playVideoAt(i); }catch(e){}
-    $('jrmPlayer').classList.add('show');
+    clearTimeout(blkT); blkT=setTimeout(function(){ var st=-1; try{st=player.getPlayerState();}catch(e){} if(wantPlay&&st!==1&&st!==3){ $('jrmPlayer').classList.add('need'); } },3500);
   }
   function start(force){
     if(!(cfg.on||force)||!cfg.list) return;
@@ -12552,7 +12552,7 @@ body{
   function stop(){
     playing=false; wantPlay=false;
     try{ player&&player.pauseVideo(); }catch(e){}
-    var p=$('jrmPlayer'); if(p) p.classList.remove('show');
+    clearTimeout(blkT); var p=$('jrmPlayer'); if(p) p.classList.remove('need');
   }
   window.jrMusicStart=function(){ start(false); };
   window.jrMusicStop=stop;
