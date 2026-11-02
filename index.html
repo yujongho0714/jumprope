@@ -3548,7 +3548,19 @@ body{
   window.jdInstallHelp=help;
 
 })();
-</script></head>
+</script><style id="v-narrow-fix">
+/* 세로로 긴 폰(갤럭시 울트라 등)·글자 크게 설정한 폰에서 랭킹 이름이 '김…'으로 잘리거나 사라지던 문제:
+   이름 칸이 최소 폭을 확보하고, 모자라면 오른쪽 기록/버튼이 아래 줄로 내려가게 함. 이름은 줄바꿈해서 끝까지 보이게. */
+.hof-row{ flex-wrap:wrap; row-gap:6px; }
+.hof-name{ flex:1 1 8.5em; min-width:min(8.5em, 100%); }
+.hof-name-line{ flex-wrap:wrap; row-gap:2px; }
+.hof-name .nm{ white-space:normal !important; overflow:visible !important; text-overflow:clip !important; word-break:keep-all; overflow-wrap:anywhere; max-width:100%; }
+.hof-stats{ max-width:none !important; margin-left:auto; }
+.hof-actions{ margin-left:auto; }
+/* 위쪽 탭 버튼 글자가 한 글자씩 쪼개지지 않게 */
+.hof-tab, .hof-mode-tab, .speed-records-mode-tab{ word-break:keep-all; padding-left:4px !important; padding-right:4px !important; }
+</style>
+</head>
 <body>
 <div id="jd-splash" aria-hidden="true"><img src="icon-512.png" alt=""></div>
 <div class="wrap">
