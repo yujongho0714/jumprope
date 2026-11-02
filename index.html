@@ -12526,11 +12526,19 @@ body{
     player=new YT.Player('jrmYT',{width:'200',height:'113',
       playerVars:{listType:'playlist',list:cfg.list,playsinline:1,controls:1,rel:0,modestbranding:1},
       events:{
-        onReady:function(){ ready=true; cuedList=cfg.list; try{player.setLoop(true);}catch(e){} if(wantPlay) playRandom(); },
-        onStateChange:function(e){ if(e.data===1){ errCount=0; $('jrmPlayer').classList.remove('need'); if(!wantPlay){ try{player.pauseVideo();}catch(_){} } } },
+        onReady:function(){ ready=true; cuedList=cfg.list; try{player.setLoop(true); player.setVolume(0);}catch(e){} if(wantPlay) playRandom(); },
+        onStateChange:function(e){ if(e.data===1){ errCount=0; $('jrmPlayer').classList.remove('need'); if(!wantPlay){ try{player.pauseVideo();}catch(_){} } else onPlaying(); } },
         onError:function(e){ errCount++; if(wantPlay&&errCount<6) setTimeout(playRandom,400); else if(errCount>=6) msg('재생할 수 있는 곡이 없어요. 재생목록이 공개/일부공개인지 확인해주세요.'); }
       }});
   }
+  // ---- 볼륨 페이드 ----
+  var vol=0, fadeT=null;
+  function setVol(v){ vol=Math.max(0,Math.min(100,v)); try{ player.setVolume(Math.round(vol)); }catch(e){} }
+  function fadeTo(target,ms,done){
+    clearInterval(fadeT); var from=vol, t0=Date.now();
+    fadeT=setInterval(function(){ var k=Math.min(1,(Date.now()-t0)/ms); setVol(from+(target-from)*k); if(k>=1){ clearInterval(fadeT); fadeT=null; done&&done(); } },50);
+  }
+  var fadeInPending=false;
   function playRandom(){
     if(!player||!ready) return;
     if(cuedList!==cfg.list){ cuedList=cfg.list; try{player.cuePlaylist({listType:'playlist',list:cfg.list});}catch(e){} setTimeout(playRandom,1200); return; }
@@ -12539,23 +12547,31 @@ body{
     var i=Math.floor(Math.random()*list.length);
     if(list.length>1){ while(i===lastIdx) i=Math.floor(Math.random()*list.length); }
     lastIdx=i;
-    try{ player.setShuffle(true); player.setLoop(true); player.unMute(); player.setVolume(100); player.playVideoAt(i); }catch(e){}
+    clearInterval(fadeT); setVol(0); fadeInPending=true;
+    try{ player.setShuffle(true); player.setLoop(true); player.unMute(); player.playVideoAt(i); }catch(e){}
     clearTimeout(blkT); blkT=setTimeout(function(){ var st=-1; try{st=player.getPlayerState();}catch(e){} if(wantPlay&&st!==1&&st!==3){ $('jrmPlayer').classList.add('need'); } },3500);
   }
+  function onPlaying(){ if(fadeInPending){ fadeInPending=false; fadeTo(100,2000); } else if(vol<100&&!fadeT){ setVol(100); } }
+  function isPlayingNow(){ try{ return player&&player.getPlayerState()===1; }catch(e){ return false; } }
   function start(force){
     if(!(cfg.on||force)||!cfg.list) return;
     if(playing) return;            // 같은 판 안에서 여러 번 불려도 한 번만
     playing=true; wantPlay=true; errCount=0;
     if(!player){ loadApi(); return; }
-    playRandom();
+    if(isPlayingNow()) fadeTo(0,800,playRandom);   // 나오던 노래 페이드아웃 → 새 노래 페이드인
+    else playRandom();
   }
+  // 게임이 끝나도 노래는 계속 (다음 판 시작할 때 다른 노래로 바뀜)
+  function gameEnd(){ playing=false; }
   function stop(){
-    playing=false; wantPlay=false;
-    try{ player&&player.pauseVideo(); }catch(e){}
+    playing=false; wantPlay=false; fadeInPending=false;
     clearTimeout(blkT); var p=$('jrmPlayer'); if(p) p.classList.remove('need');
+    if(isPlayingNow()) fadeTo(0,800,function(){ try{ player.pauseVideo(); }catch(e){} });
+    else { try{ player&&player.pauseVideo(); }catch(e){} }
   }
   window.jrMusicStart=function(){ start(false); };
-  window.jrMusicStop=stop;
+  window.jrMusicStop=gameEnd;   // 게임 종료: 노래는 그대로 둠
+  window.jrMusicOff=stop;
   // 미리 불러두기 (첫 곡이 빨리 나오도록)
   if(cfg.on&&cfg.list) setTimeout(loadApi,1500);
 
