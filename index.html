@@ -12499,8 +12499,9 @@ body{
 <script>
 (function(){
   var KEY='jumprope_music_v1';
-  var cfg={on:false,list:''};
-  try{ var c=JSON.parse(localStorage.getItem(KEY)||'{}'); if(c&&typeof c==='object'){cfg.on=!!c.on;cfg.list=c.list||'';} }catch(e){}
+  var DEFAULT_LIST='PLe9IaZnt8ba4'; // 관장님 지정 유튜브 뮤직 재생목록
+  var cfg={on:true,list:DEFAULT_LIST};
+  try{ var raw=localStorage.getItem(KEY); var c=raw?JSON.parse(raw):null; if(c&&typeof c==='object'&&c.list){cfg.on=!!c.on;cfg.list=c.list;} }catch(e){}
   function saveCfg(){ try{ localStorage.setItem(KEY,JSON.stringify(cfg)); }catch(e){} }
   function $(id){return document.getElementById(id);}
   function parseList(s){
