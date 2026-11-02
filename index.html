@@ -3299,6 +3299,21 @@ body{
 @keyframes scdPop{ 0%{ transform:scale(2.2); opacity:0; } 25%{ transform:scale(1); opacity:1; } 80%{ opacity:1; } 100%{ transform:scale(0.8); opacity:0; } }
 @keyframes scdGo{ 0%{ transform:scale(0.4); opacity:0; } 35%{ transform:scale(1.15); opacity:1; } 100%{ transform:scale(1.4); opacity:0; } }
 @media (prefers-reduced-motion: reduce){ .speed-countdown .scd-num{ animation:none; } }
+
+/* 한계돌파 9명 이상: 위쪽 타이머 박스를 줄이고 도전자 박스를 화면 높이에 맞춰 한 화면에 모두 보이게 */
+#lb-player-grid .player-card .pcount{ white-space:nowrap; }
+#lb-challenge-view.lb-compact #lb-timer-card{ padding-top:8px; padding-bottom:8px; }
+#lb-challenge-view.lb-compact .timer-display{ font-size:clamp(34px, 9vw, 64px) !important; line-height:1.05; }
+#lb-challenge-view.lb-compact .level-badge{ font-size:12px; padding:3px 10px; margin-bottom:2px; }
+#lb-challenge-view.lb-compact .lb-skill-label{ font-size:11px; margin:0; }
+#lb-challenge-view.lb-compact .lb-skill-name{ font-size:clamp(18px, 5.2vw, 30px) !important; margin:2px 0; line-height:1.15; }
+#lb-challenge-view.lb-compact .lb-skill-next{ font-size:clamp(13px, 3.6vw, 20px) !important; margin-top:3px; padding-top:3px; line-height:1.2; }
+#lb-challenge-view.lb-compact .lb-progress-elevator{ max-height:150px; gap:3px; }
+#lb-challenge-view.lb-compact .lb-progress-elevator .lb-dot{ width:22px; height:22px; font-size:10px; }
+#lb-challenge-view.lb-compact #lb-timer-card .preset-hint{ margin-top:4px !important; font-size:11px; }
+#lb-challenge-view.lb-compact .card{ margin-bottom:8px; }
+#lb-challenge-view.lb-compact .card .section-label{ font-size:12px; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#lb-challenge-view.lb-compact #lb-player-grid.player-grid{ gap:5px; }
 </style>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#06060a">
@@ -9557,7 +9572,47 @@ body{
       p.badgeEl = card.querySelector('.rank-badge-slot');
       p.medalEl = card.querySelector('.pmedalbadge');
     });
+    lbChallengeView.classList.toggle('lb-compact', lbParticipants.length > 8);
+    lbBaseRatio = lbRatio;
+    lbScheduleAutoFit();
   }
+
+  // 도전자가 많을 때 카드 크기를 화면 남은 높이에 맞춰 자동으로 줄임 (타이머 박스가 맨 위에 오도록 스크롤된 상태 기준)
+  let lbBaseRatio = 1, lbFitTimers = [];
+  function lbApplyRatio(r){
+    lbPlayerGridEl.style.setProperty('--pbox-w', (displayScale.w * r).toFixed(3));
+    lbPlayerGridEl.style.setProperty('--pbox-h', (displayScale.h * r).toFixed(3));
+  }
+  function lbAutoFit(){
+    if(!lbPlayerGridEl || !lbPlayerGridEl.children.length) return;
+    if(lbChallengeView.classList.contains('hidden')) return;
+    lbPlayerGridEl.classList.add('autofit-measuring');
+    lbApplyRatio(lbBaseRatio);
+    void lbPlayerGridEl.offsetHeight;
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    const topRef = lbTimerCard.getBoundingClientRect().top;
+    const rect = lbPlayerGridEl.getBoundingClientRect();
+    const natural = rect.height;
+    if(natural <= 0){ lbPlayerGridEl.classList.remove('autofit-measuring'); return; }
+    const card = lbPlayerGridEl.closest('.card');
+    const padBottom = card ? Math.max(0, card.getBoundingClientRect().bottom - rect.bottom) : 12;
+    const available = Math.max(80, vh - (rect.top - topRef) - padBottom - 6);
+    if(natural > available){
+      let r = Math.max(0.38, lbBaseRatio * available / natural);
+      lbApplyRatio(r);
+      void lbPlayerGridEl.offsetHeight;
+      const h2 = lbPlayerGridEl.getBoundingClientRect().height;
+      if(h2 > available + 4){ r = Math.max(0.38, r * available / h2); lbApplyRatio(r); }
+    }
+    void lbPlayerGridEl.offsetHeight;
+    lbPlayerGridEl.classList.remove('autofit-measuring');
+  }
+  function lbScheduleAutoFit(){
+    lbFitTimers.forEach(clearTimeout);
+    lbFitTimers = [0, 300, 1000, 2500].map(t => setTimeout(() => requestAnimationFrame(lbAutoFit), t));
+  }
+  window.addEventListener('resize', () => lbScheduleAutoFit());
+  window.addEventListener('orientationchange', () => setTimeout(lbScheduleAutoFit, 250));
 
   // 살아있는 도전자 카드를 터치하면 탈락 처리, 이미 탈락(검정)한 카드를 다시 터치하면 부활
   function lbHandleCardTap(id){
@@ -9842,7 +9897,8 @@ body{
     lbLevelBadge.classList.remove('level-up');
     void lbLevelBadge.offsetWidth;
     lbLevelBadge.classList.add('level-up');
-    if(level > 1) lbSpawnLevelBurst(level === lbMaxLevel); // 층이 올라갈 때마다 화려하게, 마지막 층이면 더 크게
+    if(level > 1) lbSpawnLevelBurst(level === lbMaxLevel);
+    lbScheduleAutoFit(); // 층이 올라갈 때마다 화려하게, 마지막 층이면 더 크게
     lbSkillLabelEl.textContent = `${level}층`;
     lbSkillNameEl.textContent = lbSkills[level - 1];
     updateLbNextPreview(level);
@@ -12472,6 +12528,7 @@ body{
 <style>
 #jrmBtn{position:fixed;left:10px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:99990;width:46px;height:46px;border-radius:50%;border:0;background:#1f1f1f;color:#fff;font-size:22px;box-shadow:0 3px 10px rgba(0,0,0,.35);cursor:pointer;opacity:.85}
 #jrmBtn.on{background:#e53935}
+body.jrm-ingame #jrmBtn,body.jrm-ingame #jrmBox{display:none}
 #jrmBox{position:fixed;left:10px;bottom:62px;z-index:99991;width:min(92vw,360px);background:#fff;color:#222;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.4);padding:14px;display:none;font:14px/1.45 system-ui,sans-serif}
 #jrmBox.show{display:block}
 #jrmBox h3{margin:0 0 8px;font-size:16px}
@@ -12557,13 +12614,15 @@ body{
     if(!(cfg.on||force)||!cfg.list) return;
     if(playing) return;            // 같은 판 안에서 여러 번 불려도 한 번만
     playing=true; wantPlay=true; errCount=0;
+    if(!force) document.body.classList.add('jrm-ingame');
     if(!player){ loadApi(); return; }
     if(isPlayingNow()) fadeTo(0,800,playRandom);   // 나오던 노래 페이드아웃 → 새 노래 페이드인
     else playRandom();
   }
   // 게임이 끝나도 노래는 계속 (다음 판 시작할 때 다른 노래로 바뀜)
-  function gameEnd(){ playing=false; }
+  function gameEnd(){ playing=false; document.body.classList.remove('jrm-ingame'); }
   function stop(){
+    document.body.classList.remove('jrm-ingame');
     playing=false; wantPlay=false; fadeInPending=false;
     clearTimeout(blkT); var p=$('jrmPlayer'); if(p) p.classList.remove('need');
     if(isPlayingNow()) fadeTo(0,800,function(){ try{ player.pauseVideo(); }catch(e){} });
