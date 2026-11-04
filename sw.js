@@ -2,7 +2,7 @@
    - 한 번 받은 화면 파일을 폰에 저장해 두고 다음부터 바로 열어요.
    - 열 때마다 새 버전이 있는지 조용히 확인하고, 바뀌었으면 다음 실행부터 새 화면이 보여요.
    - Firebase(클라우드 저장)와 구글 로그인은 항상 인터넷으로 연결해요. */
-const CACHE = 'jd-jumprope-v10';
+const CACHE = 'jd-jumprope-v11';
 const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 const NETWORK_ONLY = /firebaseio\.com|firebasedatabase\.app|firebaseapp\.com|googleapis\.com|accounts\.google\.com|apis\.google\.com|securetoken|identitytoolkit|youtube\.com|youtube-nocookie\.com/;
 
@@ -36,6 +36,12 @@ async function sameSite(e, req) {
     }
     return r;
   }).catch(() => null);
+  // 화면(html)은 인터넷이 되면 항상 최신 버전을 먼저 보여줌 (3초 안에 안 오면 저장본)
+  if (hit && (req.mode === 'navigate' || /\.html$|\/$/.test(new URL(req.url).pathname))) {
+    const fresh = await Promise.race([net, new Promise(r => setTimeout(() => r(null), 3000))]);
+    if (fresh && fresh.ok) return fresh;
+    e.waitUntil(net); return hit;
+  }
   if (hit) { e.waitUntil(net); return hit; }
   const r = await net;
   if (r) return r;
