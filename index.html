@@ -3559,6 +3559,30 @@ body{
 .hof-actions{ margin-left:auto; }
 /* 위쪽 탭 버튼 글자가 한 글자씩 쪼개지지 않게 */
 .hof-tab, .hof-mode-tab, .speed-records-mode-tab{ word-break:keep-all; padding-left:4px !important; padding-right:4px !important; }
+</style><style id="v26-fix">
+/* TOP1~3 카드: 기록 개수가 카드 아래로 잘려 안 보이던 문제 → 잘림 없애고, 빛줄기가 글자를 덮지 않게 */
+.hof-row.top1, .hof-row.top2, .hof-row.top3{ overflow:visible !important; height:auto !important; padding-bottom:16px !important; }
+.hof-row.top1::after, .hof-row.top2::after, .hof-row.top3::after{ border-radius:14px; z-index:0; opacity:.55; }
+.hof-row > *{ position:relative; z-index:1; }
+.hof-row > .hof-crown, .hof-row > .hof-medal-icon{ position:absolute; z-index:2; }
+.hof-row .speed-cnt{ font-size:17px !important; font-weight:900; color:#fff !important; text-shadow:0 0 6px rgba(0,0,0,.9); }
+/* 끝나면 2초 결과 플래시 */
+#jr-end-flash{ position:fixed; inset:0; z-index:99999; display:flex; align-items:center; justify-content:center; background:rgba(5,5,14,.86); animation:jefIn .25s ease-out; padding:16px; }
+#jr-end-flash.out{ opacity:0; transition:opacity .25s; }
+#jr-end-flash .jef-box{ text-align:center; max-height:94vh; overflow:auto; width:100%; }
+#jr-end-flash .jef-title{ font-size:clamp(26px,7vw,54px); font-weight:900; color:#fff; margin-bottom:10px; }
+#jr-end-flash .jef-row{ display:flex; flex-direction:column; align-items:center; margin:6px 0; }
+#jr-end-flash .jef-name{ font-size:clamp(20px,6vw,40px); font-weight:900; color:#e6e9f5; }
+#jr-end-flash .jef-cnt{ font-family:'Archivo Black',sans-serif; font-size:clamp(70px,24vw,190px); line-height:1; color:#f4ff2b; text-shadow:0 0 24px rgba(244,255,43,.7); animation:jefPop .45s cubic-bezier(.2,1.6,.4,1); }
+#jr-end-flash .jef-sub{ font-size:clamp(16px,4.5vw,30px); font-weight:800; color:#9fd4ff; }
+#jr-end-flash .jef-box.many{ display:flex; flex-wrap:wrap; justify-content:center; gap:4px 18px; }
+#jr-end-flash .jef-box.many .jef-title{ width:100%; }
+#jr-end-flash .jef-box.many .jef-row{ flex-direction:row; gap:8px; align-items:baseline; margin:2px 0; min-width:40%; justify-content:center; }
+#jr-end-flash .jef-box.many .jef-cnt{ font-size:clamp(30px,8vw,64px); }
+#jr-end-flash .jef-box.many .jef-name{ font-size:clamp(18px,5vw,34px); }
+#jr-end-flash .jef-box.many .jef-sub{ font-size:clamp(13px,3.5vw,22px); }
+@keyframes jefIn{ from{ opacity:0; } }
+@keyframes jefPop{ from{ transform:scale(.3); opacity:0; } }
 </style>
 </head>
 <body>
@@ -3573,7 +3597,7 @@ body{
   <div class="masthead">
     <h1>정도 줄넘기 시합</h1>
     <p>최대 16명 · 4×4 자리 배치 · 걸리면 터치 · 자동 순위</p>
-    <p style="font-size:11px; opacity:0.55; margin-top:2px;">파일 버전: 2026-11-04-v25 (랭킹 이름 잘림·한계돌파 16명 화면 맞춤·배경음악) / 이전: 2026-09-22-v24 (한계돌파 기술이 난이도에 맞게 안 나오던 버그 수정 · 백업에 한계돌파 기술·타임어택 기술·모든 프리셋 포함 · 타임어택 프리셋 · 스피드 카운트다운 · 번갈아뛰기 ±1 · 판정버튼 확대 · 스피드 경험치 새 기준 + 기존 기록 하향 패치 · 팀전 기록 직접 추가 · 스피드 기준 원래대로·등급별 경험치 3~5배 · 팀전 박스 팀색 구분 · 스피드 랭킹 줄 정리 · 계급 JSON·백업 가져오기에 계급 이미지 미리보기 · 플레이어 박스·랭킹 정렬 개선 · 보안 점검: 이름/이미지/백업 파일 검증 · 계급 계산 안전장치 · 중복 기록으로 계급 튀는 문제 수정 · 백업 완전 복원 · 계급 보정 겹침 방지 · 점검 도구) / 이전: v13 (한계돌파 도전자 카드 글씨 확대 · 전체 백업에 스피드/타임어택/한계돌파 기록·층별 기술·프리셋 포함)</p>
+    <p style="font-size:11px; opacity:0.55; margin-top:2px;">파일 버전: 2026-11-05-v26 (랭킹 1~3위 개수 안 보이던 문제 · 끝나면 2초 개수 표시) / 이전: 2026-11-04-v25 (랭킹 이름 잘림·한계돌파 16명 화면 맞춤·배경음악) / 이전: 2026-09-22-v24 (한계돌파 기술이 난이도에 맞게 안 나오던 버그 수정 · 백업에 한계돌파 기술·타임어택 기술·모든 프리셋 포함 · 타임어택 프리셋 · 스피드 카운트다운 · 번갈아뛰기 ±1 · 판정버튼 확대 · 스피드 경험치 새 기준 + 기존 기록 하향 패치 · 팀전 기록 직접 추가 · 스피드 기준 원래대로·등급별 경험치 3~5배 · 팀전 박스 팀색 구분 · 스피드 랭킹 줄 정리 · 계급 JSON·백업 가져오기에 계급 이미지 미리보기 · 플레이어 박스·랭킹 정렬 개선 · 보안 점검: 이름/이미지/백업 파일 검증 · 계급 계산 안전장치 · 중복 기록으로 계급 튀는 문제 수정 · 백업 완전 복원 · 계급 보정 겹침 방지 · 점검 도구) / 이전: v13 (한계돌파 도전자 카드 글씨 확대 · 전체 백업에 스피드/타임어택/한계돌파 기록·층별 기술·프리셋 포함)</p>
   </div>
 
   <div class="page-tab-row">
@@ -4328,6 +4352,25 @@ body{
   const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype', 'hasOwnProperty', 'toString', 'valueOf']);
   const loadOverlay = document.getElementById('load-overlay');
   const MAX_PLAYERS = 16;
+  /* 게임이 끝나면 2초 동안 '몇 개'를 화면 가득 보여주는 결과 플래시 (화면 터치하면 바로 닫힘) */
+  function jrEndFlash(title, items){
+    try{
+      items = (items || []).filter(Boolean);
+      if(!items.length) return;
+      let ov = document.getElementById('jr-end-flash');
+      if(ov) ov.remove();
+      ov = document.createElement('div');
+      ov.id = 'jr-end-flash';
+      const many = items.length > 1;
+      ov.innerHTML = `<div class="jef-box${many ? ' many' : ''}"><div class="jef-title">${title}</div>` +
+        items.map(it => `<div class="jef-row">${it.name ? `<span class="jef-name">${escapeHtml(it.name)}</span>` : ''}<span class="jef-cnt">${it.big}</span>${it.sub ? `<span class="jef-sub">${it.sub}</span>` : ''}</div>`).join('') +
+        `</div>`;
+      document.body.appendChild(ov);
+      const close = () => { ov.classList.add('out'); setTimeout(() => ov.remove(), 260); };
+      ov.addEventListener('click', close);
+      setTimeout(close, 2000);
+    }catch(e){}
+  }
   const RATE_PER_SEC = 2; // 1초당 2개
   const MEDALS = ['🥇','🥈','🥉'];
 
@@ -9239,6 +9282,7 @@ body{
     });
 
     renderTeamResults(ranked);
+    jrEndFlash('🏁 끝!', ranked.map(r => ({ name: r.name, big: `${r.count || 0}개`, sub: '' })));
 
     /* podium: top 3 */
     podium.innerHTML = '';
@@ -10092,6 +10136,7 @@ body{
     lbChallengeView.classList.add('hidden');
     lbResultView.classList.remove('hidden');
     lbRenderFinalSummary();
+    jrEndFlash('🔥 한계돌파 끝!', lbParticipantSummaries.slice().sort((a, b) => b.exp - a.exp).map(p => ({ name: p.name, big: `${p.exp}개`, sub: `${p.cleared}층` })));
   }
 
   function lbStatusLabel(p){
@@ -11288,7 +11333,7 @@ body{
     document.getElementById('mission-result-hint').textContent =
       `기술 획득 ${missionState.expEarned}개 + ${grade}등급 보너스 ${bonus}개 = 총 ${totalCount}개 · 누적 ${getPlayerTotalCount(missionState.playerName)}개 · 현재 ${newLevel}계급`;
     missionPlayScreen.classList.add('hidden');
-    missionResultScreen.classList.remove('hidden');
+    missionResultScreen.classList.remove('hidden');    jrEndFlash('🎯 미션 끝!', [{ name: missionState.playerName, big: `${totalCount}개`, sub: `${grade}등급` }]);
   }
   document.getElementById('mission-result-finish-btn').addEventListener('click', () => {
     missionState = null;
@@ -11736,6 +11781,7 @@ body{
 
     document.getElementById('speed-play-screen').classList.add('hidden');
     document.getElementById('speed-result-screen').classList.remove('hidden');
+    jrEndFlash('⏱ 끝!', [{ name: speedState.named ? name : '', big: `${count}개`, sub: `${SPEED_MODE_LABEL[mode]} · ${grade}` }]);
   }
   document.getElementById('speed-result-finish-btn').addEventListener('click', () => {
     speedState = null;
