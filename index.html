@@ -4362,6 +4362,7 @@ body{
 
 </div>
 
+<script src="https://yujongho0714.github.io/allinone/jd-roster.js"></script>
 <script>
 (async function(){
   const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype', 'hasOwnProperty', 'toString', 'valueOf']);
@@ -5165,6 +5166,25 @@ body{
     });
     if(added) queueRosterSave();
   })();
+
+  /* ---------- 출결 앱 명단 연동 ----------
+     출결 앱에 새로 들어온 원생은 명단에 자동 추가, 퇴관한 원생은 퇴관한 달까지만 있고 다음 달에 빠짐
+     (기록 · 계급 · 훈장은 이름 아래 그대로 보관돼서 다시 들어오면 이어져요) */
+  const JDR_JUMPS = ['9급','8급','7급','6급','5급','4급','3급','2급','1급','주니어3급','주니어2급','주니어1급'];
+  if(window.JDR){
+    try{ const h = document.querySelector('#roster-screen .section-label'); if(h){ const c = JDR.chip(null, 'margin:6px 0 0;'); h.insertAdjacentElement('afterend', c); } }catch(e){}
+    JDR.on(async (L, info) => {
+      if(!L.length) return;
+      const act = new Set(L.filter(x => !x.out).map(x => x.name));
+      let add = false;
+      act.forEach(n => { if(!roster.some(r => r.name === n) && roster.length < MAX_ROSTER){ roster.push({ name: n, gender: '' }); add = true; } });
+      if(add) await queueRosterSave();
+      const gone = [...new Set(L.filter(x => x.out && !act.has(x.name)).map(x => x.name))].filter(n => roster.some(r => r.name === n));
+      for(const n of gone){ await queueRosterRemoval(n); }
+      try{ updateRosterDatalist(); }catch(e){}
+      try{ if(!rosterScreen.classList.contains('hidden') && !editingRosterName) renderRosterList(); }catch(e){}
+    });
+  }
 
   let records = await loadRecordsFromStorage(); // { 이름: [ {date, time, count, timeSec, forced}, ... ] }
   let ranks = await loadRanksFromStorage(); // 계급 이미지 dataURL 배열, index 0 = 1계급, index 1 = 2계급 ...
@@ -6308,6 +6328,22 @@ body{
         rnameSpan.className = 'rname';
         rnameSpan.innerHTML = `${nameplateOpenTag(r.name)}${personalRankBadgeHtml(r.name)}${plateTextHtml(r.name)}${nameplateCloseTag(r.name)}${medalBadgeHtml(r.name)}`;
         chipTop.appendChild(rnameSpan);
+        // 출결 앱 줄넘기 급 (여기서 바꾸면 출결 · 영상심사 앱 모두 같이 바뀜)
+        if(window.JDR && JDR.list.length){
+          const ms = JDR.byName(r.name).filter(x => !x.out);
+          if(ms.length === 1){
+            const sel = document.createElement('select');
+            sel.className = 'jdr-jump'; sel.title = '줄넘기 급 (출결 앱과 같이 바뀌어요)';
+            sel.style.cssText = 'margin-left:6px;font-size:12px;padding:2px 4px;border-radius:6px;max-width:92px';
+            sel.innerHTML = '<option value="">급 없음</option>' + JDR_JUMPS.map(g => `<option ${ms[0].jump === g ? 'selected' : ''}>${g}</option>`).join('');
+            sel.addEventListener('click', e => e.stopPropagation());
+            sel.addEventListener('change', async () => { try{ await JDR.setJump(ms[0].id, sel.value); }catch(e){ alert('저장 실패: ' + (e.message || e)); renderRosterList(); } });
+            chipTop.appendChild(sel);
+          } else if(!ms.length){
+            const t = document.createElement('span'); t.textContent = '출결 명단에 없음'; t.style.cssText = 'margin-left:6px;font-size:11px;color:#ff8a8a;font-weight:700';
+            chipTop.appendChild(t);
+          }
+        }
 
         const chipActions = document.createElement('div');
         chipActions.className = 'roster-chip-actions';
